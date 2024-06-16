@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/src/services/keyboard_key.g.dart';
 import 'package:flutter/src/services/raw_keyboard.dart';
 import 'package:super_mario/constants/globals.dart';
 import 'package:super_mario/game/super_mario_game.dart';
 import 'package:super_mario/objects/platform.dart';
+import 'package:super_mario/overlays/pause_menu.dart';
 
 enum MarioAnimationState {
   idle,
@@ -18,12 +20,20 @@ enum MarioAnimationState {
 class Mario extends SpriteAnimationGroupComponent<MarioAnimationState>
     with HasGameRef<SuperMarioGame>, CollisionCallbacks, KeyboardHandler {
   final double _gravity = 15;
-  final Vector2 velocity = Vector2.zero();
+  Vector2 velocity = Vector2.zero();
+
+  //to determine if super mario in on the ground or not
+  final Vector2 _up = Vector2(0, -1);
+  bool _jumpInput = false;
+  //because he start by jumping
+  bool isOnGround = false;
+
+  bool _paused = false;
 
   late Vector2 _minClamp;
   late Vector2 _maxClamp;
 
-  double _jumpSpeed = 400;
+  double _jumpSpeed = 300;
 
   static const double _minMoveSpeed = 125;
   static const double _maxMoveSpeed = -_minMoveSpeed + 100;
@@ -33,7 +43,7 @@ class Mario extends SpriteAnimationGroupComponent<MarioAnimationState>
 
   Mario({required Vector2 position, required Rectangle levelBounds})
       : super(
-            position: position, size: Vector2(32, 32), anchor: Anchor.center) {
+            position: position, size: Vector2(16, 16), anchor: Anchor.center) {
     //debugMode = true;
     _minClamp = levelBounds.topLeft + (size / 2);
     _maxClamp = levelBounds.bottomRight + (size / 2);
@@ -50,6 +60,7 @@ class Mario extends SpriteAnimationGroupComponent<MarioAnimationState>
     speedUpdate();
     facingDirectionUpdate();
     animationUpdate();
+    jumpUpdate();
   }
 
   @override
@@ -58,8 +69,36 @@ class Mario extends SpriteAnimationGroupComponent<MarioAnimationState>
 
     _hAxisInput += keysPressed.contains(LogicalKeyboardKey.arrowLeft) ? -1 : 0;
     _hAxisInput += keysPressed.contains(LogicalKeyboardKey.arrowRight) ? 1 : 0;
+    _jumpInput = keysPressed.contains(LogicalKeyboardKey.arrowUp) ? true : false;
+
+    if(keysPressed.contains(LogicalKeyboardKey.keyA)){
+      _pause();
+    }
 
     return super.onKeyEvent(event, keysPressed);
+  }
+
+   void  _pause(){
+     FlameAudio.play(Globals.pauseSFX);
+
+     //_paused ? gameRef.resumeEngine() : gameRef.pauseEngine();
+
+     //_paused = !_paused ;
+     gameRef.pauseEngine();
+     gameRef.overlays.add(PauseMenu.id);
+
+   }
+
+  void jumpUpdate() {
+    if (_jumpInput && isOnGround) {
+      jump();
+    }
+  }
+
+  void jump() {
+    velocity.y -= _jumpSpeed;
+    isOnGround = false;
+    FlameAudio.play(Globals.jumpSmallSFX);
   }
 
   void speedUpdate() {
@@ -82,13 +121,19 @@ class Mario extends SpriteAnimationGroupComponent<MarioAnimationState>
       flipHorizontallyAroundCenter();
     }
   }
-  void animationUpdate(){
-    if(_hAxisInput == 0){
-      current = MarioAnimationState.idle;
-    }else{
-      current = MarioAnimationState.walking;
+
+  void animationUpdate() {
+    if (!isOnGround) {
+      current = MarioAnimationState.jumping;
+    } else {
+      if (_hAxisInput == 0) {
+        current = MarioAnimationState.idle;
+      } else {
+        current = MarioAnimationState.walking;
+      }
     }
   }
+
   void velocityUpdate() {
     velocity.y += _gravity;
     velocity.y = velocity.y.clamp(-_jumpSpeed, 150);
@@ -146,6 +191,9 @@ class Mario extends SpriteAnimationGroupComponent<MarioAnimationState>
     final Vector2 collisionNormal = absoluteCenter - mid;
     double penetrationLenght = (size.x / 2) - collisionNormal.length;
     collisionNormal.normalize();
+    if (_up.dot(collisionNormal) > 0.9) {
+      isOnGround = true;
+    }
     position += collisionNormal.scaled(penetrationLenght);
   }
 }

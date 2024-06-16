@@ -27,7 +27,9 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/audio/
     - assets/images/Terrain/
+    - assets/images/Enemies/Turtle/
     - assets/images/Main Characters/Virtual Guy/
     - assets/images/Main Characters/Ninja Frog/
     - assets/images/Items/Fruits/

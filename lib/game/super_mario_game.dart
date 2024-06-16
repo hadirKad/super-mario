@@ -4,8 +4,6 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
-import 'package:super_mario/level/level.dart';
-import 'package:super_mario/level/level_option.dart';
 
 class SuperMarioGame extends FlameGame with HasCollisionDetection , HasKeyboardHandlerComponents{
   @override
@@ -14,7 +12,7 @@ class SuperMarioGame extends FlameGame with HasCollisionDetection , HasKeyboardH
   @override
   final World world = World();
   late CameraComponent cam;
-  Level? _currentlevel; 
+ 
 
   @override
   FutureOr<void> onLoad() async {
@@ -23,6 +21,7 @@ class SuperMarioGame extends FlameGame with HasCollisionDetection , HasKeyboardH
       "Main Characters/Ninja Frog/Run (32x32).png",
       "Main Characters/Ninja Frog/Jump (32x32).png",
       "Main Characters/Ninja Frog/Fall (32x32).png",
+      "Enemies/Turtle/Idle 1 (44x26).png",
       "Items/Fruits/Collected.png",
       "Items/Fruits/Pineapple.png",
       "Items/Checkpoints/Checkpoint/Checkpoint (Flag Idle)(64x64).png",
@@ -33,6 +32,7 @@ class SuperMarioGame extends FlameGame with HasCollisionDetection , HasKeyboardH
       'HUD/Joystick.png',
       'HUD/JumpButton.png'
     ]);
+    
     cam = CameraComponent(world: world)
       ..viewport.size = Vector2(450, 50)
       //we do 500 to make sure the player is visibile
@@ -42,13 +42,9 @@ class SuperMarioGame extends FlameGame with HasCollisionDetection , HasKeyboardH
       ..viewfinder.position = Vector2(0, 0)
       ..viewfinder.anchor = Anchor.topLeft;
     addAll([world, cam]);
-    loadLevel(LevelOption.lv_1);
+   
     return super.onLoad();
   }
   
-  void loadLevel(LevelOption option) {
-     _currentlevel?.removeFromParent();
-     _currentlevel = Level(option);
-     add(_currentlevel!);
-  }
+  
 }
